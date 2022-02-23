@@ -1,14 +1,20 @@
-import vars
 from random import randint
 from math import atan2
+from display import update
+
+# Graham Scan Variables
+class vars:
+    points = []
+    anchor = None
+    hull = []
 
 # Creates a random set of points
 # Parameters:
 #   n: The number of points created (Default: 20)
 #   min: The minimum value for the point's x and y coordinate
 #   max: The maximum value for the point's x and y coordinate
-# Returns:
-#   An array of n random points with their coordinates ranging from min to max
+# Vars:
+#   points: An array of n random points with their coordinates ranging from min to max
 def create_points(n=20, min=0, max=100):
     vars.points = [[randint(min, max), randint(min, max)] for _ in range(n)]
 
@@ -72,6 +78,11 @@ def quicksort(arr=None):
             larger.append(point)
     return quicksort(smaller) + sorted(equal, key=distance) + quicksort(larger)
 
+# Set the anchor coordinate for the graph, sort our list of points, and set up our hull
+# Vars:
+#   anchor: The lowest y-coordinate and x-coordinate point on the graph
+#   points: A sorted list of the points by polar angle from anchor
+#   hull:   Set up with just the anchor and the 1st point on the points list 
 def set_anchor():
     min_index = None
     for i, (x, y) in enumerate(vars.points):
