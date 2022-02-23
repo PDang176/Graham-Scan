@@ -1,3 +1,4 @@
+import vars
 from random import randint
 from math import atan2
 
@@ -9,15 +10,14 @@ from math import atan2
 # Returns:
 #   An array of n random points with their coordinates ranging from min to max
 def create_points(n=20, min=0, max=100):
-    global points
-    points = [[randint(min, max), randint(min, max)] for _ in range(n)]
+    vars.points = [[randint(min, max), randint(min, max)] for _ in range(n)]
 
 # Calculates the polar angle formed between 2 points
 # Parameters:
 # 
 def polar_angle(a, b=None):
     if b == None:
-        b = anchor
+        b = vars.anchor
     x = a[0] - b[0]
     y = a[1] - b[1]
     return atan2(y, x)
@@ -29,7 +29,7 @@ def polar_angle(a, b=None):
 #   Squared distance of points a and b
 def distance(a, b=None):
     if b == None:
-        b = anchor
+        b = vars.anchor
     x = a[0] - b[0]
     y = a[1] - b[1]
     return x**2 + y**2
@@ -53,7 +53,7 @@ def ccw(a, b, c):
 #   If equal return it sorted by distance
 def quicksort(arr=None):
     if arr == None:
-        arr = points
+        arr = vars.points
     if len(arr) <= 1:
         return arr
     # Create 3 separate arrays according to if their polar angle are smaller, equal to, or larger than the pivot
@@ -73,20 +73,19 @@ def quicksort(arr=None):
     return quicksort(smaller) + sorted(equal, key=distance) + quicksort(larger)
 
 def set_anchor():
-    global anchor, points, hull
     min_index = None
-    for i, (x, y) in enumerate(points):
-        if min_index == None or y < points[min_index][1]:
+    for i, (x, y) in enumerate(vars.points):
+        if min_index == None or y < vars.points[min_index][1]:
             min_index = i
-        if y == points[min_index][1] and x < points[min_index][0]:
+        if y == vars.points[min_index][1] and x < vars.points[min_index][0]:
             min_index = i
     
-    anchor = points[min_index]
+    vars.anchor = vars.points[min_index]
     
-    points = quicksort()
-    del points[points.index(anchor)]
+    vars.points = quicksort()
+    del vars.points[vars.points.index(vars.anchor)]
 
-    hull = [anchor, points[0]]
+    vars.hull = [vars.anchor, vars.points[0]]
 
 def graham_scan():
     set_anchor()
