@@ -1,7 +1,6 @@
 import pygame
 import graham_scan
 
-# Constants
 WIDTH = 1000
 HEIGHT = 1000
 RADIUS = 5
@@ -13,8 +12,6 @@ def run(n=20):
     clock = pygame.time.Clock()
 
     display.fill((0, 0, 0))
-
-
 
     pygame.display.update()
 
