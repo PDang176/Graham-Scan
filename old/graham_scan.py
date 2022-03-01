@@ -1,12 +1,6 @@
 from random import randint
 from math import atan2
-from display import update
-
-# Graham Scan Variables
-class vars:
-    points = []
-    anchor = None
-    hull = []
+import vars
 
 # Creates a random set of points
 # Parameters:
@@ -16,6 +10,8 @@ class vars:
 # Vars:
 #   points: An array of n random points with their coordinates ranging from min to max
 def create_points(n=20, min=0, max=100):
+    vars.min = min
+    vars.max = max
     vars.points = [[randint(min, max), randint(min, max)] for _ in range(n)]
 
 # Calculates the polar angle formed between 2 points
@@ -97,8 +93,3 @@ def set_anchor():
     del vars.points[vars.points.index(vars.anchor)]
 
     vars.hull = [vars.anchor, vars.points[0]]
-
-def graham_scan():
-    set_anchor()
-
-
