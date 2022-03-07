@@ -1,45 +1,14 @@
-import pygame
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sb
 from random import randint
 from math import atan2
 
-# Screen Constants
-DIM = 800
-RADIUS = 5
-LINE = 2
-SPEED = 5 # FPS
-
-# Color Constants
-BLACK = (0, 0, 0) # Background
-RED = (255, 0, 0) # In Hull / Connection
-BLUE = (0, 0, 255) # Not in Hull
-YELLOW = (255, 255, 0) # Testing for Hull / Testing Connection
-GREEN = (0, 255, 0) # Fully Complete Convex Hull
-
 # Create Points Variables (n points ranging from min to max)
-n = 50
-min = 50
-max = 750
-
-# Anchor Variable
-anchor = []
-
-# Draws the current graph of points
-# Parameters:
-#   points: The graph of points
-def draw_graph(points):
-    for point in points:
-        pygame.draw.circle(screen, BLUE, reverse_y(point), RADIUS)
-
-    pygame.display.update()
-    # pygame.time.delay(2000) # Wait 2 seconds to load in screen before starting
-
-# Reverses the y coordinate to start from top left to bottom left
-# Parameters:
-#   point: The point we want to switch the y-coordinate for
-# Returns:
-#   A point with the same x but a y starting from the bottom and not the top
-def reverse_y(point):
-    return (point[0], DIM - point[1])
+n = 100000
+min = 0
+max = 100000000
 
 # Get the anchor coordinate for the graph
 # Parameters:
@@ -62,6 +31,7 @@ def get_anchor(points):
 # Returns:
 #   Polar angle between a and b
 def polar_angle(a):
+    global anchor
     x = a[0] - anchor[0]
     y = a[1] - anchor[1]
     return atan2(y, x)
@@ -72,6 +42,7 @@ def polar_angle(a):
 # Returns:
 #   Squared distance between a and b
 def distance(a):
+    global anchor
     x = a[0] - anchor[0]
     y = a[1] - anchor[1]
     return x**2 + y**2
@@ -112,39 +83,35 @@ def quicksort(arr):
             larger.append(point)
     return quicksort(smaller) + sorted(equal, key=distance) + quicksort(larger)
 
-def main():
-    global screen, clock, anchor
+def plot_points(points, hull=None):
+    df = pd.DataFrame(points, columns=['x', 'y'])
+    plt.scatter(x=df['x'], y=df['y'], s=5)
     
-    # Initialize Pygame Settings
-    pygame.init()
+    # A hull was passed in to graph
+    if(hull != None):
+        for i in range(len(hull) - 1):
+            x = [hull[i][0], hull[i + 1][0]]
+            y = [hull[i][1], hull[i + 1][1]]
+            plt.plot(x, y, color='red')
+        plt.plot([hull[0][0], hull[-1][0]], [hull[0][1], hull[-1][1]], color='red')
+    plt.show()
 
-    screen = pygame.display.set_mode((DIM, DIM))
-    clock = pygame.time.Clock()
-    pygame.display.set_caption("Graham Scan Algorithm")
-
-    # Set background to black
-    screen.fill(BLACK)
-
+def main():
+    global anchor
     # Create n random points
     points = [[randint(min, max), randint(min, max)] for _ in range(n)]
-
-    # Draw Initial Graph
-    draw_graph(points)
 
     # Find the anchor coordinate in the graph
     anchor = get_anchor(points)
 
     # Sort points by increasing polar angle from anchor
-    points = sorted(points, key=polar_angle)
-
-    # Delete anchor from points 
-    del points[points.index(anchor)]
-
-    # Initialize hull to anchor and the first index in points
-    hull = [anchor, points[0]]
+    points = quicksort(points)
+    
+    # Initialize hull to anchor and the first point not including anchor
+    hull = [anchor, points[1]]
 
     # Loop through all remaining points
-    for point in points[1:]:
+    for point in points[2:]:
         # If the last 2 points of the hull and the new point isn't ccw then delete the last point in hull
         while ccw(hull[-2], hull[-1], point) <= 0:
             del hull[-1]
@@ -153,21 +120,7 @@ def main():
         # Adding the new point to the hull will be ccw
         hull.append(point)
 
-    for i in range(len(hull) - 1):
-        pygame.draw.circle(screen, RED, reverse_y(hull[i]), RADIUS)
-        pygame.draw.circle(screen, RED, reverse_y(hull[i + 1]), RADIUS)
-        pygame.draw.line(screen, RED, reverse_y(hull[i]), reverse_y(hull[i + 1]))
-
-    pygame.draw.line(screen, RED, reverse_y(hull[len(hull) - 1]), reverse_y(hull[0]))
-
-    pygame.display.update()
-
-    # Run program until we quit the program
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                return
+    plot_points(points, hull)
 
 if __name__ == "__main__":
     main()
