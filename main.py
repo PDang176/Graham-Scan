@@ -26,12 +26,26 @@ anchor = []
 # Draws the current graph of points
 # Parameters:
 #   points: The graph of points
-def draw_graph(points):
+def draw_graph(points, hull=None):
+    global screen
+
+    screen.fill(BLACK) # Set background to black
+
     for point in points:
         pygame.draw.circle(screen, BLUE, reverse_y(point), RADIUS)
 
+    if(hull != None):
+        for i in range(len(hull) - 1):
+            pygame.draw.circle(screen, RED, reverse_y(hull[i]), RADIUS)
+            pygame.draw.circle(screen, RED, reverse_y(hull[i + 1]), RADIUS)
+            pygame.draw.line(screen, RED, reverse_y(hull[i]), reverse_y(hull[i + 1]))
+        pygame.draw.line(screen, RED, reverse_y(hull[len(hull) - 1]), reverse_y(hull[0]))
+
+def update(points, hull=None):
+    global clock
+    draw_graph(points, hull)
     pygame.display.update()
-    # pygame.time.delay(2000) # Wait 2 seconds to load in screen before starting
+    clock.tick(SPEED)
 
 # Reverses the y coordinate to start from top left to bottom left
 # Parameters:
@@ -122,14 +136,12 @@ def main():
     clock = pygame.time.Clock()
     pygame.display.set_caption("Graham Scan Algorithm")
 
-    # Set background to black
-    screen.fill(BLACK)
-
     # Create n random points
     points = [[randint(min, max), randint(min, max)] for _ in range(n)]
 
     # Draw Initial Graph
-    draw_graph(points)
+    update(points)
+    pygame.time.delay(2000) # Wait 2 seconds to load in screen before starting
 
     # Find the anchor coordinate in the graph
     anchor = get_anchor(points)
@@ -150,17 +162,10 @@ def main():
             del hull[-1]
             if len(hull) < 2:
                 break
+            update(points, hull)
         # Adding the new point to the hull will be ccw
         hull.append(point)
-
-    for i in range(len(hull) - 1):
-        pygame.draw.circle(screen, RED, reverse_y(hull[i]), RADIUS)
-        pygame.draw.circle(screen, RED, reverse_y(hull[i + 1]), RADIUS)
-        pygame.draw.line(screen, RED, reverse_y(hull[i]), reverse_y(hull[i + 1]))
-
-    pygame.draw.line(screen, RED, reverse_y(hull[len(hull) - 1]), reverse_y(hull[0]))
-
-    pygame.display.update()
+        update(points, hull)
 
     # Run program until we quit the program
     while True:
