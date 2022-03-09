@@ -23,24 +23,28 @@ max = 750
 # Draws the current graph of points
 # Parameters:
 #   points: The graph of points
-def draw_graph(points, hull=None):
+def draw_graph(points, opoints=None, hull=None):
     global screen
 
     screen.fill(BLACK) # Set background to black
 
+    if opoints != None:
+        for point in opoints:
+            pygame.draw.circle(screen, YELLOW, reverse_y(point), RADIUS)
+
     for point in points:
         pygame.draw.circle(screen, BLUE, reverse_y(point), RADIUS)
 
-    if(hull != None):
+    if hull != None:
         for i in range(len(hull) - 1):
             pygame.draw.circle(screen, RED, reverse_y(hull[i]), RADIUS)
             pygame.draw.circle(screen, RED, reverse_y(hull[i + 1]), RADIUS)
             pygame.draw.line(screen, RED, reverse_y(hull[i]), reverse_y(hull[i + 1]))
         pygame.draw.line(screen, RED, reverse_y(hull[len(hull) - 1]), reverse_y(hull[0]))
 
-def update(points, hull=None):
+def update(points, opoints=None, hull=None):
     global clock
-    draw_graph(points, hull)
+    draw_graph(points, opoints, hull)
     pygame.display.update()
     clock.tick(SPEED)
 
@@ -125,12 +129,17 @@ def quicksort(arr):
             larger.append(point)
     return quicksort(smaller) + sorted(equal, key=distance) + quicksort(larger)
 
-def graham_scan(points):
+# Find the convex hull of the given points array
+# Parameters:
+#   points: The array to loop through
+# Pygame:
+#   Updates the graph with the calculated convex hull
+def graham_scan(points, opoints=None):
     global anchor
 
     # Initialize hull to anchor and the first point (not including anchor) in points
     hull = [anchor, points[1]]
-    update(points, hull)
+    update(points, opoints, hull)
 
     # Loop through all remaining points
     for point in points[2:]:
@@ -139,11 +148,98 @@ def graham_scan(points):
             del hull[-1]
             if len(hull) < 2:
                 break
-            update(points, hull)
+            update(points, opoints, hull)
         # Adding the new point to the hull will be ccw
         hull.append(point)
-        update(points, hull)
+        update(points, opoints, hull)
 
+# Akl_Toussaint Heuristic to reduce the number of points needed for the Graham Scan
+# Creates a quadrilateral out of the left/right/top/bottom most points in the points array
+# Currently doesn't account for the edge cases involving some points being the same
+# Any point within this quadrilateral will not appear in the final convex hull thus can be removed
+# Parameters:
+#   points: The points array to search through
+# Returns:
+#   npoints: The new points array with only possible points for the convex hull algorithm
+def akl_toussaint(points):
+    # New points array to return after heuristic is completed
+    npoints = []
+
+    # left, right, bottom, top
+    polygon = [points[0] for _ in range(4)]
+
+    # Create polygon
+    for p in points[1:]:
+        if p[0] < polygon[0][0]:
+            polygon[0] = p
+        elif p[0] > polygon[1][0]:
+            polygon[1] = p
+        if p[1] < polygon[2][1]:
+            polygon[2] = p
+        elif p[1] > polygon[3][1]:
+            polygon[3] = p
+
+    # Append polygon points to new points array
+    npoints.append(polygon[0])
+    npoints.append(polygon[1])
+    if polygon[2] != polygon[0] and polygon[2] != polygon[1]:
+        npoints.append(polygon[2])
+    if polygon[3] != polygon[0] and polygon[3] != polygon[1]:
+        npoints.append(polygon[3])
+    if len(npoints) == 2:
+        return points
+    
+    # Append points outside of polygon to new points array
+    for p in points:
+        # Check if point is one of the polygon points
+        if p == polygon[0] or p == polygon[1] or p == polygon[2] or p == polygon[3]:
+            continue
+
+        # Check if point is inside of the polygon
+        if is_inside_polygon(polygon, p):
+            continue
+
+        # Point is outside of the polygon so append
+        npoints.append(p)
+    
+    return npoints
+
+# Use barycentric coordinate system to determine if point is inside the polygon
+# Information taken from cs130 class
+# https://www.cs.ucr.edu/~craigs/courses/2020-winter-cs-230/lectures/barycentric-coordinates.pdf
+# Forms 2 triangles within the polygon if passed 4 coordinates and checks if the point is within one of the 2 triangles
+# Parameters:
+#   polygon: The coordinates representing the polygon
+#   p : The point to check if it's inside the polygon
+# Returns:
+#   True: p is inside the polygon
+#   False: p is outside the polygon
+def is_inside_polygon(polygon, p):
+    # Create a triangle using 3 coordinates of polygon
+    ABC = area(polygon[0], polygon[1], polygon[2])
+    alpha = area(p, polygon[1], polygon[2]) / ABC
+    beta = area(p, polygon[2], polygon[0]) / ABC
+    gamma = area(p, polygon[0], polygon[1]) / ABC
+
+    # Check if inside triangle made by 3 coordinates of polygon
+    if alpha >= 0 and beta >= 0 and gamma >= 0:
+        return True
+    
+    # Polygon is only 3 coordinates
+    if len(polygon) == 3:
+        return False
+    
+    # Create a triangle representing the other half of the polygon
+    ABC = area(polygon[0], polygon[1], polygon[3])
+    alpha = area(p, polygon[1], polygon[3]) / ABC
+    beta = area(p, polygon[3], polygon[0]) / ABC
+    gamma = area(p, polygon[0], polygon[1]) / ABC
+
+    # Check if inside triangle made by 3 coordinates of polygon
+    return alpha >= 0 and beta >= 0 and gamma >= 0
+
+def area(a, b, c):
+    return 0.5 * (((b[0] * c[1]) - (c[0] * b[1])) + ((c[0] * a[1]) - (a[0] * c[1])) + ((a[0] * b[1]) - (b[0] * a[1])))
 
 def main():
     global screen, clock, anchor
@@ -162,13 +258,16 @@ def main():
     update(points)
     pygame.time.delay(2000) # Wait 2 seconds to load in screen before starting
 
+    # Run Akl-Toussaint Heuristic
+    npoints = akl_toussaint(points)
+
     # Find the anchor coordinate in the graph
-    anchor = get_anchor(points)
+    anchor = get_anchor(npoints)
 
     # Sort points by increasing polar angle from anchor
-    points = quicksort(points)
+    npoints = quicksort(npoints)
 
-    graham_scan(points)    
+    graham_scan(npoints, points)    
 
     # Run program until we quit the program
     while True:
