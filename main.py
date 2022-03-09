@@ -20,9 +20,6 @@ n = 50
 min = 50
 max = 750
 
-# Anchor Variable
-anchor = []
-
 # Draws the current graph of points
 # Parameters:
 #   points: The graph of points
@@ -76,6 +73,7 @@ def get_anchor(points):
 # Returns:
 #   Polar angle between a and b
 def polar_angle(a):
+    global anchor
     x = a[0] - anchor[0]
     y = a[1] - anchor[1]
     return atan2(y, x)
@@ -86,6 +84,7 @@ def polar_angle(a):
 # Returns:
 #   Squared distance between a and b
 def distance(a):
+    global anchor
     x = a[0] - anchor[0]
     y = a[1] - anchor[1]
     return x**2 + y**2
@@ -126,6 +125,26 @@ def quicksort(arr):
             larger.append(point)
     return quicksort(smaller) + sorted(equal, key=distance) + quicksort(larger)
 
+def graham_scan(points):
+    global anchor
+
+    # Initialize hull to anchor and the first point (not including anchor) in points
+    hull = [anchor, points[1]]
+    update(points, hull)
+
+    # Loop through all remaining points
+    for point in points[2:]:
+        # If the last 2 points of the hull and the new point isn't ccw then delete the last point in hull
+        while ccw(hull[-2], hull[-1], point) <= 0:
+            del hull[-1]
+            if len(hull) < 2:
+                break
+            update(points, hull)
+        # Adding the new point to the hull will be ccw
+        hull.append(point)
+        update(points, hull)
+
+
 def main():
     global screen, clock, anchor
     
@@ -147,25 +166,9 @@ def main():
     anchor = get_anchor(points)
 
     # Sort points by increasing polar angle from anchor
-    points = sorted(points, key=polar_angle)
+    points = quicksort(points)
 
-    # Delete anchor from points 
-    del points[points.index(anchor)]
-
-    # Initialize hull to anchor and the first index in points
-    hull = [anchor, points[0]]
-
-    # Loop through all remaining points
-    for point in points[1:]:
-        # If the last 2 points of the hull and the new point isn't ccw then delete the last point in hull
-        while ccw(hull[-2], hull[-1], point) <= 0:
-            del hull[-1]
-            if len(hull) < 2:
-                break
-            update(points, hull)
-        # Adding the new point to the hull will be ccw
-        hull.append(point)
-        update(points, hull)
+    graham_scan(points)    
 
     # Run program until we quit the program
     while True:
