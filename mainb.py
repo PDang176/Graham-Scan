@@ -135,37 +135,36 @@ def akl_toussaint(points):
     # New points array to return after heuristic is completed
     npoints = []
 
-    # left, right, bottom, top
+    # bottom, right, top, left
     polygon = [points[0] for _ in range(4)]
 
-    # Create polygon
-    for p in points[1:]:
-        if p[0] < polygon[0][0]:
-            polygon[0] = p
-        elif p[0] > polygon[1][0]:
-            polygon[1] = p
-        if p[1] < polygon[2][1]:
-            polygon[2] = p
-        elif p[1] > polygon[3][1]:
-            polygon[3] = p
+    for (x, y) in points[1:]:
+        # Lowest y
+        if y < polygon[0][1]:
+            polygon[0] = [x, y]
+        # Highest x
+        if x > polygon[1][0]:
+            polygon[1] = [x, y]
+        # Highest y
+        if y > polygon[2][1]:
+            polygon[2] = [x, y]
+        # Lowest x
+        if x < polygon[3][0]:
+            polygon[3] = [x, y]
 
-    # Append polygon points to new points array
-    npoints.append(polygon[0])
-    npoints.append(polygon[1])
-    if polygon[2] != polygon[0] and polygon[2] != polygon[1]:
-        npoints.append(polygon[2])
-    if polygon[3] != polygon[0] and polygon[3] != polygon[1]:
-        npoints.append(polygon[3])
+    # Append polygon points to new points array without duplicates
+    npoints = [polygon[0]]
+    curr = polygon[0]
+    for p in polygon[1:]:
+        if p != curr:
+            npoints.append(p)
+            curr = p
 
-    if len(npoints) == 2:
+    if len(npoints) < 3: # Not a polygon
         return points
-    
+
     # Append points outside of polygon to new points array
     for p in points:
-        # Check if point is one of the polygon points
-        if p == polygon[0] or p == polygon[1] or p == polygon[2] or p == polygon[3]:
-            continue
-
         # Check if point is inside of the polygon
         if is_inside_polygon(polygon, p):
             continue
@@ -175,45 +174,89 @@ def akl_toussaint(points):
     
     return npoints
 
-# Use barycentric coordinate system to determine if point is inside the polygon
-# Information taken from cs130 class
-# https://www.cs.ucr.edu/~craigs/courses/2020-winter-cs-230/lectures/barycentric-coordinates.pdf
-# Forms 2 triangles within the polygon if passed 4 coordinates and checks if the point is within one of the 2 triangles
+# Akl_Toussaint Heuristic to reduce the number of points needed for the Graham Scan
+# Creates a octagon out of the bottom/right/top/left most points and 
+# points with highest x/y sums and differences in the points array
+# Currently doesn't account for the edge cases involving some points being the same
+# Any point within this octagons will not appear in the final convex hull thus can be removed
 # Parameters:
-#   polygon: The coordinates representing the polygon
-#   p : The point to check if it's inside the polygon
+#   points: The points array to search through
+# Returns:
+#   npoints: The new points array with only possible points for the convex hull algorithm
+def akl_toussaint_oct(points):
+    # Lowest y, Highest difference, Highest x, Highest sum, Highest y, Lowest difference, Lowest x, Lowest sum
+    polygon = [points[0] for _ in range(8)]
+
+    for (x, y) in points[1:]:
+        # Lowest y
+        if y < polygon[0][1]:
+            polygon[0] = [x, y]
+        # Highest difference
+        if x - y > polygon[1][0] - polygon[1][1]:
+            polygon[1] = [x, y]
+        # Highest x
+        if x > polygon[2][0]:
+            polygon[2] = [x, y]
+        # Highest sum
+        if x + y > polygon[3][0] + polygon[3][1]:
+            polygon[3] = [x, y]
+        # Highest y
+        if y > polygon[4][1]:
+            polygon[4] = [x, y]
+        # Lowest difference
+        if x - y < polygon[5][0] - polygon[5][1]:
+            polygon[5] = [x, y]
+        # Lowest x
+        if x < polygon[6][0]:
+            polygon[6] = [x, y]
+        # Lowest sum
+        if x + y < polygon[7][0] + polygon[7][1]:
+            polygon[7] = [x, y]
+
+    # Append polygon points to new points array without duplicates
+    npoints = [polygon[0]]
+    curr = polygon[0]
+    for p in polygon[1:]:
+        if p != curr:
+            npoints.append(p)
+            curr = p
+
+    if len(npoints) < 3: # Not a polygon
+        return points
+
+    # Append points outside of polygon to new points array
+    for p in points:
+        # Check if point is inside of the polygon
+        if is_inside_polygon(polygon, p):
+            continue
+
+        # Point is outside of the polygon so append
+        npoints.append(p)
+    
+    return npoints
+
+# Check if point is inside the polygon
+# If the point is on the left of all line segments in the polygon then it's inside the polygon
+# Parameters:
+#   polygon: The points representing the polygon
+#   p : The point we're checking 
 # Returns:
 #   True: p is inside the polygon
 #   False: p is outside the polygon
 def is_inside_polygon(polygon, p):
-    # Create a triangle using 3 coordinates of polygon
-    ABC = area(polygon[0], polygon[1], polygon[2])
-    alpha = area(p, polygon[1], polygon[2]) / ABC
-    beta = area(p, polygon[2], polygon[0]) / ABC
-    gamma = area(p, polygon[0], polygon[1]) / ABC
+    # Length of the polygon
+    n = len(polygon)
 
-    # Check if inside triangle made by 3 coordinates of polygon
-    if alpha >= 0 and beta >= 0 and gamma >= 0:
-        return True
+    for i in range(n):
+        p1 = polygon[i]
+        p2 = polygon[(i + 1) % n]
+        
+        # If p doesn't form a counter clockwise rotation with p1 and p2 then 
+        # it's either on the polygon perimeter or outside the polygon
+        if ccw(p1, p2, p) <= 0:
+            return False
     
-    # Polygon is only 3 coordinates
-    if len(polygon) == 3:
-        return False
-    
-    # Create a triangle representing the other half of the polygon
-    ABC = area(polygon[0], polygon[1], polygon[3])
-    alpha = area(p, polygon[1], polygon[3]) / ABC
-    beta = area(p, polygon[3], polygon[0]) / ABC
-    gamma = area(p, polygon[0], polygon[1]) / ABC
-
-    # Check if inside triangle made by 3 coordinates of polygon
-    return alpha >= 0 and beta >= 0 and gamma >= 0
-
-# Area of triangle given by vertices a, b, and c
-# Parameters:
-#   a, b, c: Vertices of the triangle
-def area(a, b, c):
-    return 0.5 * (((b[0] * c[1]) - (c[0] * b[1])) + ((c[0] * a[1]) - (a[0] * c[1])) + ((a[0] * b[1]) - (b[0] * a[1])))
+    return True
 
 def main():
     global anchor
@@ -225,25 +268,23 @@ def main():
         # Get the starting time
         start = time.time()
 
-        # # Original
-        # npoints = points
-
         # Run Akl-Toussaint Heuristic
-        npoints = akl_toussaint(points)
+        points = akl_toussaint_oct(points)
+        anchor = points[0]
 
-        # Find the anchor coordinate in the graph
-        anchor = get_anchor(npoints)
+        # # Find the anchor coordinate in the graph
+        # anchor = get_anchor(points)
 
         # Sort points by increasing polar angle from anchor
-        npoints = quicksort(npoints)
+        points = quicksort(points)
         
         # Call Graham Scan Algorithm
-        graham_scan(npoints)
+        graham_scan(points)
 
         # Get the ending time
         end = time.time()
 
-        f = open("results/akl-toussaint107b.txt", "a")
+        f = open("results/akl-toussaint107o.txt", "a")
         f.write(str(end - start) + "\n")
         f.close()
 
