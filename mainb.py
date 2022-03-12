@@ -9,7 +9,7 @@ from math import atan2
 # Create Points Variables (n points ranging from min to max)
 n = 10000000
 min = 0
-max = 10000000000
+max = 1000000000
 
 # Get the anchor coordinate for the graph
 # Parameters:
@@ -156,6 +156,7 @@ def akl_toussaint(points):
         npoints.append(polygon[2])
     if polygon[3] != polygon[0] and polygon[3] != polygon[1]:
         npoints.append(polygon[3])
+
     if len(npoints) == 2:
         return points
     
@@ -224,6 +225,9 @@ def main():
         # Get the starting time
         start = time.time()
 
+        # # Original
+        # npoints = points
+
         # Run Akl-Toussaint Heuristic
         npoints = akl_toussaint(points)
 
@@ -239,7 +243,7 @@ def main():
         # Get the ending time
         end = time.time()
 
-        f = open("akl-toussaint.txt", "a")
+        f = open("results/akl-toussaint107b.txt", "a")
         f.write(str(end - start) + "\n")
         f.close()
 
