@@ -5,11 +5,12 @@ import seaborn as sb
 import time
 from random import randint
 from math import atan2
+from functools import cmp_to_key
 
 # Create Points Variables (n points ranging from min to max)
-n = 10000000
+n = 100000
 min = 0
-max = 1000000000
+max = 10000000
 
 # Get the anchor coordinate for the graph
 # Parameters:
@@ -49,6 +50,16 @@ def cotan(a):
     if y == 0:
         return -max
     return -x / y
+
+def compare(a, b):
+    global anchor
+    cross = ccw(anchor, a, b)
+    if cross < 0:
+        return -1
+    if cross > 0:
+        return 1
+    return 0
+
 
 # Calculates the squared distance between the anchor and the point
 # Parameters:
@@ -117,6 +128,31 @@ def quicksort2(arr):
         if angle < pivot:
             smaller.append(point)
         elif angle == pivot:
+            equal.append(point)
+        else:
+            larger.append(point)
+    return quicksort(smaller) + sorted(equal, key=distance) + quicksort(larger)
+
+# Sort the passed in array by increasing polar angle from starting point
+# Parameters:
+#   arr: The array to sort
+# Returns:
+#   Recursive call to quicksort for smaller and larger
+#   If equal return it sorted by distance
+def quicksort3(arr):
+    if len(arr) <= 1:
+        return arr
+    # Create 3 separate arrays according to if their polar angle are smaller, equal to, or larger than the pivot
+    smaller = []
+    equal = []
+    larger = []
+    # Calculate the cotangent of a random point in our array to use as our pivot
+    pivot = arr[randint(0, len(arr) - 1)]
+    for point in arr:
+        comp = compare(point, pivot)
+        if comp < 0:
+            smaller.append(point)
+        elif comp == 0:
             equal.append(point)
         else:
             larger.append(point)
@@ -299,34 +335,34 @@ def is_inside_polygon(polygon, p):
 def main():
     global anchor
 
-    for i in range(10):
-        # Create n random points
-        points = [[randint(min, max), randint(min, max)] for _ in range(n)]
+    # for i in range(10):
+    # Create n random points
+    points = [[randint(min, max), randint(min, max)] for _ in range(n)]
 
-        # Get the starting time
-        start = time.time()
+    # Get the starting time
+    # start = time.time()
 
-        # # Run Akl-Toussaint Heuristic
-        # points = akl_toussaint_oct(points)
-        # anchor = points[0]
+    # Run Akl-Toussaint Heuristic
+    # points = akl_toussaint_oct(points)
+    # anchor = points[0]
 
-        # Find the anchor coordinate in the graph
-        anchor = get_anchor(points)
+    # Find the anchor coordinate in the graph
+    anchor = get_anchor(points)
 
-        # Sort points by increasing polar angle from anchor
-        points = quicksort(points)
-        
-        # Call Graham Scan Algorithm
-        graham_scan(points)
+    # Sort points by increasing polar angle from anchor
+    points = quicksort(points)
 
-        # Get the ending time
-        end = time.time()
+    # Call Graham Scan Algorithm
+    graham_scan(points, True)
 
-        f = open("results/original107c.txt", "a")
-        f.write(str(end - start) + "\n")
-        f.close()
+    # Get the ending time
+    # end = time.time()
 
-    print()
+    # f = open("results/akl-toussaint107o.txt", "a")
+    # f.write(str(end - start) + "\n")
+    # f.close()
+
+    # print()
 
 if __name__ == "__main__":
     main()
