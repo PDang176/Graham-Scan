@@ -83,13 +83,18 @@ def polar_angle(a):
     y = a[1] - anchor[1]
     return atan2(y, x)
 
+# Calculates the cotangent formed between the anchor and the point
+# Parameters:
+#   a: Given Point
+# Returns:
+#   Cotangent between anchor and a
 def cotan(a):
     global anchor
-    x = anchor[0] - a[0]
+    x = a[0] - anchor[0]
     y = a[1] - anchor[1]
     if y == 0:
-        return -inf
-    return x / y
+        return -max
+    return -x / y
 
 # Calculates the squared distance between the 2 points
 # Parameters:
@@ -146,6 +151,35 @@ def quicksort(arr):
             equal.append(point)
         else:
             larger.append(point)
+    return quicksort(smaller) + sorted(equal, key=distance) + quicksort(larger)
+
+def quicksort2(arr):
+    if len(arr) <= 1:
+        return arr
+    # Create 3 separate arrays according to if their polar angle are smaller, equal to, or larger than the pivot
+    smaller = []
+    equal = []
+    larger = []
+    # Calculate the polar angle of a random point in our array to use as our pivot
+    pivot = polar_angle(arr[randint(0, len(arr) - 1)])
+    for point in arr:
+        angle = polar_angle(point)
+        if angle < pivot:
+            smaller.append(point)
+        elif angle == pivot:
+            equal.append(point)
+        else:
+            larger.append(point)
+
+    # pivot = cotan(arr[randint(0, len(arr) - 1)])
+    # for point in arr:
+    #     angle = cotan(point)
+    #     if angle < pivot:
+    #         smaller.append(point)
+    #     elif angle == pivot:
+    #         equal.append(point)
+    #     else:
+    #         larger.append(point)
     return quicksort(smaller) + sorted(equal, key=distance) + quicksort(larger)
 
 # Find the convex hull of the given points array
@@ -273,9 +307,9 @@ def main():
     # Create n random points
     points = [[randint(min, max), randint(min, max)] for _ in range(n)]
 
-    # Draw Initial Graph
-    update(points)
-    pygame.time.delay(2000) # Wait 2 seconds to load in screen before starting
+    # # Draw Initial Graph
+    # update(points)
+    # pygame.time.delay(2000) # Wait 2 seconds to load in screen before starting
 
     # # Run Akl-Toussaint Heuristic
     # npoints = akl_toussaint(points)
@@ -284,10 +318,14 @@ def main():
     anchor = get_anchor(points)
 
     # Sort points by increasing polar angle from anchor
-    points = quicksort(points)
+    npoints = quicksort(points)
+    opoints = quicksort2(points)
 
     print(anchor)
-    print(points)
+    print(npoints)
+    print(opoints)
+    print(npoints == opoints)
+    return
 
     graham_scan(points)    
 

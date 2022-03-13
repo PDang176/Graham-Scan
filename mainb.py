@@ -44,11 +44,11 @@ def polar_angle(a):
 #   Cotangent between anchor and a
 def cotan(a):
     global anchor
-    x = anchor[0] - a[0]
+    x = a[0] - anchor[0]
     y = a[1] - anchor[1]
     if y == 0:
         return -max
-    return x / y
+    return -x / y
 
 # Calculates the squared distance between the anchor and the point
 # Parameters:
@@ -89,6 +89,31 @@ def quicksort(arr):
     pivot = cotan(arr[randint(0, len(arr) - 1)])
     for point in arr:
         angle = cotan(point)
+        if angle < pivot:
+            smaller.append(point)
+        elif angle == pivot:
+            equal.append(point)
+        else:
+            larger.append(point)
+    return quicksort(smaller) + sorted(equal, key=distance) + quicksort(larger)
+
+# Sort the passed in array by increasing polar angle from starting point
+# Parameters:
+#   arr: The array to sort
+# Returns:
+#   Recursive call to quicksort for smaller and larger
+#   If equal return it sorted by distance
+def quicksort2(arr):
+    if len(arr) <= 1:
+        return arr
+    # Create 3 separate arrays according to if their polar angle are smaller, equal to, or larger than the pivot
+    smaller = []
+    equal = []
+    larger = []
+    # Calculate the cotangent of a random point in our array to use as our pivot
+    pivot = polar_angle(arr[randint(0, len(arr) - 1)])
+    for point in arr:
+        angle = polar_angle(point)
         if angle < pivot:
             smaller.append(point)
         elif angle == pivot:
@@ -297,7 +322,7 @@ def main():
         # Get the ending time
         end = time.time()
 
-        f = open("results/original107.txt", "a")
+        f = open("results/original107c.txt", "a")
         f.write(str(end - start) + "\n")
         f.close()
 
