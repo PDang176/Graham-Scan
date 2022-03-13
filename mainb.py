@@ -8,9 +8,9 @@ from math import atan2
 from functools import cmp_to_key
 
 # Create Points Variables (n points ranging from min to max)
-n = 100000
+n = 100
 min = 0
-max = 10000000
+max = 10000
 
 # Get the anchor coordinate for the graph
 # Parameters:
@@ -178,7 +178,7 @@ def plot_points(points, hull=None):
 # Find the convex hull of the given points array
 # Parameters:
 #   points: The array to loop through
-def graham_scan(points, plot=False):
+def graham_scan(points, opoints=None, plot=False):
     global anchor
 
     # Initialize hull to anchor and the first point (not including anchor) in points
@@ -195,7 +195,7 @@ def graham_scan(points, plot=False):
         hull.append(point)
 
     if plot:
-        plot_points(points, hull)
+        plot_points(opoints, hull)
 
 # Akl_Toussaint Heuristic to reduce the number of points needed for the Graham Scan
 # Creates a quadrilateral out of the left/right/top/bottom most points in the points array
@@ -236,6 +236,12 @@ def akl_toussaint(points):
 
     if len(npoints) < 3: # Not a polygon
         return points
+
+    for i in range(len(npoints) - 1):
+        x = [npoints[i][0], npoints[i + 1][0]]
+        y = [npoints[i][1], npoints[i + 1][1]]
+        plt.plot(x, y, color='yellow')
+    plt.plot([npoints[0][0], npoints[-1][0]], [npoints[0][1], npoints[-1][1]], color='yellow')
 
     # Append points outside of polygon to new points array
     for p in points:
@@ -298,6 +304,12 @@ def akl_toussaint_oct(points):
     if len(npoints) < 3: # Not a polygon
         return points
 
+    for i in range(len(npoints) - 1):
+        x = [npoints[i][0], npoints[i + 1][0]]
+        y = [npoints[i][1], npoints[i + 1][1]]
+        plt.plot(x, y, color='yellow')
+    plt.plot([npoints[0][0], npoints[-1][0]], [npoints[0][1], npoints[-1][1]], color='yellow')
+
     # Append points outside of polygon to new points array
     for p in points:
         # Check if point is inside of the polygon
@@ -343,17 +355,17 @@ def main():
     # start = time.time()
 
     # Run Akl-Toussaint Heuristic
-    # points = akl_toussaint_oct(points)
-    # anchor = points[0]
+    npoints = akl_toussaint_oct(points)
+    anchor = npoints[0]
 
     # Find the anchor coordinate in the graph
-    anchor = get_anchor(points)
+    # anchor = get_anchor(points)
 
     # Sort points by increasing polar angle from anchor
-    points = quicksort(points)
+    npoints = quicksort(npoints)
 
     # Call Graham Scan Algorithm
-    graham_scan(points, True)
+    graham_scan(npoints, points, True)
 
     # Get the ending time
     # end = time.time()
