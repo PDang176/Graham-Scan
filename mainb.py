@@ -28,20 +28,33 @@ def get_anchor(points):
 
 # Calculates the polar angle formed between 2 points
 # Parameters:
-#   a, b: Given Points
+#   a: Given Point
 # Returns:
-#   Polar angle between a and b
+#   Polar angle between anchor and a
 def polar_angle(a):
     global anchor
     x = a[0] - anchor[0]
     y = a[1] - anchor[1]
     return atan2(y, x)
 
-# Calculates the squared distance between the 2 points
+# Calculates the cotangent formed between the anchor and the point
 # Parameters:
-#   a, b: Given Points
+#   a: Given Point
 # Returns:
-#   Squared distance between a and b
+#   Cotangent between anchor and a
+def cotan(a):
+    global anchor
+    x = anchor[0] - a[0]
+    y = a[1] - anchor[1]
+    if y == 0:
+        return -max
+    return x / y
+
+# Calculates the squared distance between the anchor and the point
+# Parameters:
+#   a: Given Points
+# Returns:
+#   Squared distance between anchor and a
 def distance(a):
     global anchor
     x = a[0] - anchor[0]
@@ -72,10 +85,10 @@ def quicksort(arr):
     smaller = []
     equal = []
     larger = []
-    # Calculate the polar angle of a random point in our array to use as our pivot
-    pivot = polar_angle(arr[randint(0, len(arr) - 1)])
+    # Calculate the cotangent of a random point in our array to use as our pivot
+    pivot = cotan(arr[randint(0, len(arr) - 1)])
     for point in arr:
-        angle = polar_angle(point)
+        angle = cotan(point)
         if angle < pivot:
             smaller.append(point)
         elif angle == pivot:
@@ -268,12 +281,12 @@ def main():
         # Get the starting time
         start = time.time()
 
-        # Run Akl-Toussaint Heuristic
-        points = akl_toussaint_oct(points)
-        anchor = points[0]
+        # # Run Akl-Toussaint Heuristic
+        # points = akl_toussaint_oct(points)
+        # anchor = points[0]
 
-        # # Find the anchor coordinate in the graph
-        # anchor = get_anchor(points)
+        # Find the anchor coordinate in the graph
+        anchor = get_anchor(points)
 
         # Sort points by increasing polar angle from anchor
         points = quicksort(points)
@@ -284,10 +297,11 @@ def main():
         # Get the ending time
         end = time.time()
 
-        f = open("results/akl-toussaint107o.txt", "a")
+        f = open("results/original107.txt", "a")
         f.write(str(end - start) + "\n")
         f.close()
 
+    print()
 
 if __name__ == "__main__":
     main()

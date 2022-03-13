@@ -1,3 +1,4 @@
+from cmath import inf
 import pygame
 from random import randint
 from math import atan2
@@ -82,6 +83,14 @@ def polar_angle(a):
     y = a[1] - anchor[1]
     return atan2(y, x)
 
+def cotan(a):
+    global anchor
+    x = anchor[0] - a[0]
+    y = a[1] - anchor[1]
+    if y == 0:
+        return -inf
+    return x / y
+
 # Calculates the squared distance between the 2 points
 # Parameters:
 #   a, b: Given Points
@@ -118,9 +127,19 @@ def quicksort(arr):
     equal = []
     larger = []
     # Calculate the polar angle of a random point in our array to use as our pivot
-    pivot = polar_angle(arr[randint(0, len(arr) - 1)])
+    # pivot = polar_angle(arr[randint(0, len(arr) - 1)])
+    # for point in arr:
+    #     angle = polar_angle(point)
+    #     if angle < pivot:
+    #         smaller.append(point)
+    #     elif angle == pivot:
+    #         equal.append(point)
+    #     else:
+    #         larger.append(point)
+
+    pivot = cotan(arr[randint(0, len(arr) - 1)])
     for point in arr:
-        angle = polar_angle(point)
+        angle = cotan(point)
         if angle < pivot:
             smaller.append(point)
         elif angle == pivot:
@@ -138,11 +157,11 @@ def graham_scan(points, opoints=None):
     global anchor
 
     # Initialize hull to anchor and the first point (not including anchor) in points
-    hull = [anchor, points[1]]
+    hull = [anchor, points[0]]
     update(points, opoints, hull)
 
     # Loop through all remaining points
-    for point in points[2:]:
+    for point in points[1:]:
         # If the last 2 points of the hull and the new point isn't ccw then delete the last point in hull
         while ccw(hull[-2], hull[-1], point) <= 0:
             del hull[-1]
@@ -258,16 +277,19 @@ def main():
     update(points)
     pygame.time.delay(2000) # Wait 2 seconds to load in screen before starting
 
-    # Run Akl-Toussaint Heuristic
-    npoints = akl_toussaint(points)
+    # # Run Akl-Toussaint Heuristic
+    # npoints = akl_toussaint(points)
 
     # Find the anchor coordinate in the graph
-    anchor = get_anchor(npoints)
+    anchor = get_anchor(points)
 
     # Sort points by increasing polar angle from anchor
-    npoints = quicksort(npoints)
+    points = quicksort(points)
 
-    graham_scan(npoints, points)    
+    print(anchor)
+    print(points)
+
+    graham_scan(points)    
 
     # Run program until we quit the program
     while True:
